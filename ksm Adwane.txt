@@ -8288,10 +8288,12 @@ addcmd('view',{'spectate'},function(args, speaker)
 		
 		task.delay(10, function()
 			if ViewSession == currentViewSession and viewing == viewedPlayer then
-				if Players.LocalPlayer.Character then
-					workspace.CurrentCamera.CameraSubject = Players.LocalPlayer.Character
+				StopFreecam()
+				if viewing ~= nil then
+					ViewSession = ViewSession + 1
+					viewing = nil
+					notify('Spectate','View turned off')
 				end
-				viewing = nil
 				if viewDied then
 					viewDied:Disconnect()
 					viewDied = nil
@@ -8300,11 +8302,12 @@ addcmd('view',{'spectate'},function(args, speaker)
 					viewChanged:Disconnect()
 					viewChanged = nil
 				end
-				notify('Spectate','View turned off (player left)')
+				workspace.CurrentCamera.CameraSubject = speaker.Character
 			end
 		end)
 	end
 end)
+
 
 
 addcmd('viewpart',{'viewp'},function(args, speaker)
