@@ -8247,6 +8247,7 @@ addcmd('nolocate',{'unlocate'},function(args, speaker)
 	end
 end)
 
+
 ViewSession = 0
 addcmd('view',{'spectate'},function(args, speaker)
 	StopFreecam()
@@ -8259,6 +8260,10 @@ addcmd('view',{'spectate'},function(args, speaker)
 		if viewChanged then
 			viewChanged:Disconnect()
 			viewChanged = nil
+		end
+		if viewRemoving then
+			viewRemoving:Disconnect()
+			viewRemoving = nil
 		end
 		
 		viewing = Players[v]
@@ -8286,13 +8291,28 @@ addcmd('view',{'spectate'},function(args, speaker)
 		end
 		viewChanged = workspace.CurrentCamera:GetPropertyChangedSignal("CameraSubject"):Connect(viewChangedFunc)
 		
+		local function viewRemovingFunc(player)
+			if player == viewedPlayer and viewing == viewedPlayer then
+				notify('Spectate','View turned off (player left)')
+				ViewSession = ViewSession + 1
+				viewing = nil
+				if viewDied then viewDied:Disconnect() viewDied = nil end
+				if viewChanged then viewChanged:Disconnect() viewChanged = nil end
+				if viewRemoving then viewRemoving:Disconnect() viewRemoving = nil end
+				if speaker.Character then
+					workspace.CurrentCamera.CameraSubject = speaker.Character
+				end
+			end
+		end
+		viewRemoving = Players.PlayerRemoving:Connect(viewRemovingFunc)
+		
 		task.delay(10, function()
 			if ViewSession == currentViewSession and viewing == viewedPlayer then
 				StopFreecam()
 				if viewing ~= nil then
 					ViewSession = ViewSession + 1
 					viewing = nil
-					notify('Spectate','View turned off')
+					notify('Spectate','View turned off (player left)')
 				end
 				if viewDied then
 					viewDied:Disconnect()
@@ -8302,12 +8322,15 @@ addcmd('view',{'spectate'},function(args, speaker)
 					viewChanged:Disconnect()
 					viewChanged = nil
 				end
+				if viewRemoving then
+					viewRemoving:Disconnect()
+					viewRemoving = nil
+				end
 				workspace.CurrentCamera.CameraSubject = speaker.Character
 			end
 		end)
 	end
 end)
-
 
 
 addcmd('viewpart',{'viewp'},function(args, speaker)
@@ -8319,33 +8342,6 @@ addcmd('viewpart',{'viewp'},function(args, speaker)
 				workspace.CurrentCamera.CameraSubject = v
 			end
 		end
-	end
-end)
-
-addcmd('unview',{'unspectate'},function(args, speaker)
-	StopFreecam()
-	if viewing ~= nil then
-		viewSession = viewSession + 1
-		viewing = nil
-		notify('Spectate','View turned off')
-	end
-	if viewDied then
-		viewDied:Disconnect()
-		viewDied = nil
-	end
-	if viewChanged then
-		viewChanged:Disconnect()
-		viewChanged = nil
-	end
-	workspace.CurrentCamera.CameraSubject = speaker.Character
-end)
-
-fcRunning = false
-local Camera = workspace.CurrentCamera
-workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
-	local newCamera = workspace.CurrentCamera
-	if newCamera then
-		Camera = newCamera
 	end
 end)
 
